@@ -2,6 +2,7 @@ package tasklist
 
 import (
 	"errors"
+	"strings"
 )
 
 type taskItem struct {
@@ -27,7 +28,7 @@ func (p *ProjectList) AddProject(name string) {
 	*p = append(*p, newProject)
 }
 
-func (p *ProjectList) AddTask(task string, priority string, projectIndex int) error {
+func (p *ProjectList) AddTask(task string, projectIndex int) error {
 
 	if projectIndex < 0 || projectIndex > len(*p)-1 {
 		return errors.New("invalid index")
@@ -35,12 +36,46 @@ func (p *ProjectList) AddTask(task string, priority string, projectIndex int) er
 
 	newTask := taskItem{
 		Task:     task,
-		Priority: priority,
+		Priority: "normal",
 		Done:     false,
 	}
 
 	project := &(*p)[projectIndex]
 	project.TaskItems = append(project.TaskItems, newTask)
 	
+	return nil
+}
+
+func (p *ProjectList) SetPriority(priority string, projectIndex int, taskIndex int) error {
+
+	if projectIndex < 0 || projectIndex > len(*p)-1 {
+		return errors.New("invalid project index")
+	}
+
+	project := &(*p)[projectIndex]
+
+	if taskIndex < 0 || taskIndex > len(project.TaskItems)-1 {
+		return errors.New("invalid task index")
+	}
+
+	project.TaskItems[taskIndex].Priority = strings.ToLower(priority)
+	
+	return nil
+}
+
+func  (p *ProjectList) Complete(projectIndex int, taskIndex int) error{
+
+	if projectIndex < 0 || projectIndex > len(*p)-1 {
+		return errors.New("invalid project index")
+	}
+
+	project := &(*p)[projectIndex]
+
+	if taskIndex < 0 || taskIndex > len(project.TaskItems)-1 {
+		return errors.New("invalid task index")
+	}
+
+	project.TaskItems[taskIndex].Done = true
+
 	return nil
 }
