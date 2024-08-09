@@ -21,5 +21,6 @@ func main() {
 	projectList.Complete(0, 0)
 	projectList.DeleteTask(0, 0)
 	projectList.DeleteTask(0, 0)
+	projectList.DeleteProject(2)
 	fmt.Println((*projectList))
 }

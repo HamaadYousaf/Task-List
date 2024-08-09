@@ -96,3 +96,14 @@ func (p *ProjectList) DeleteTask(projectIndex int, taskIndex int) error {
 
 	return nil
 }
+
+func (p *ProjectList) DeleteProject(projectIndex int) error {
+
+	if projectIndex < 0 || projectIndex > len(*p)-1 {
+		return errors.New("invalid project index")
+	}
+
+	*p = append((*p)[:projectIndex], (*p)[projectIndex+1:]...)
+
+	return nil
+}
