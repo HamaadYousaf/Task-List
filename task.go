@@ -79,3 +79,20 @@ func  (p *ProjectList) Complete(projectIndex int, taskIndex int) error{
 
 	return nil
 }
+
+func (p *ProjectList) DeleteTask(projectIndex int, taskIndex int) error {
+
+	if projectIndex < 0 || projectIndex > len(*p)-1 {
+		return errors.New("invalid project index")
+	}
+
+	project := &(*p)[projectIndex]
+
+	if taskIndex < 0 || taskIndex > len(project.TaskItems)-1 {
+		return errors.New("invalid task index")
+	}
+
+	project.TaskItems = append(project.TaskItems[:taskIndex], project.TaskItems[taskIndex+1:]...)
+
+	return nil
+}

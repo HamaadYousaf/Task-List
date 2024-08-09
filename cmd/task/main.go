@@ -19,5 +19,7 @@ func main() {
 
 	projectList.SetPriority("high", 0, 1)
 	projectList.Complete(0, 0)
+	projectList.DeleteTask(0, 0)
+	projectList.DeleteTask(0, 0)
 	fmt.Println((*projectList))
 }
