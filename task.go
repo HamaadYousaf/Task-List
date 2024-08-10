@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/alexeyco/simpletable"
 )
@@ -11,11 +12,12 @@ import (
 type taskItem struct {
 	Task     string
 	Priority string
-	Done     bool
+	Status   string
+	Created  time.Time
 }
 
 type projectItem struct {
-	Name string
+	Name      string
 	TaskItems []taskItem
 }
 
@@ -24,7 +26,7 @@ type ProjectList []projectItem
 func (p *ProjectList) AddProject(name string) {
 
 	newProject := projectItem{
-		Name:     name,
+		Name:      name,
 		TaskItems: make([]taskItem, 0, 1),
 	}
 
@@ -40,12 +42,13 @@ func (p *ProjectList) AddTask(task string, projectIndex int) error {
 	newTask := taskItem{
 		Task:     task,
 		Priority: "normal",
-		Done:     false,
+		Status:   "new",
+		Created:  time.Now(),
 	}
 
 	project := &(*p)[projectIndex]
 	project.TaskItems = append(project.TaskItems, newTask)
-	
+
 	return nil
 }
 
@@ -62,11 +65,11 @@ func (p *ProjectList) SetPriority(priority string, projectIndex int, taskIndex i
 	}
 
 	project.TaskItems[taskIndex].Priority = strings.ToLower(priority)
-	
+
 	return nil
 }
 
-func  (p *ProjectList) Complete(projectIndex int, taskIndex int) error{
+func (p *ProjectList) SetStatus(status string, projectIndex int, taskIndex int) error {
 
 	if projectIndex < 0 || projectIndex > len(*p)-1 {
 		return errors.New("invalid project index")
@@ -78,7 +81,7 @@ func  (p *ProjectList) Complete(projectIndex int, taskIndex int) error{
 		return errors.New("invalid task index")
 	}
 
-	project.TaskItems[taskIndex].Done = true
+	project.TaskItems[taskIndex].Status = strings.ToLower(status)
 
 	return nil
 }
@@ -145,7 +148,8 @@ func (p *ProjectList) ListTasks(projectIndex int) {
 			{Align: simpletable.AlignCenter, Text: "#"},
 			{Align: simpletable.AlignCenter, Text: "Task"},
 			{Align: simpletable.AlignCenter, Text: "Priority"},
-			{Align: simpletable.AlignCenter, Text: "Done?"},
+			{Align: simpletable.AlignCenter, Text: "Status"},
+			{Align: simpletable.AlignCenter, Text: "Created At"},
 		},
 	}
 
@@ -155,19 +159,22 @@ func (p *ProjectList) ListTasks(projectIndex int) {
 	for idx, item := range tasks {
 		task := item.Task
 		priority := item.Priority
-		done := "no"
-		if item.Done {
+		status := item.Status
+		created := item.Created.Format(time.RFC822)
+		if status == "done" {
 			task = green(fmt.Sprintf("\u2705 %s", item.Task))
 			priority = green(item.Priority)
-			done = green("yes")
-		} else if item.Priority == "high"{
+			status = green(item.Status)
+			created = green(created)
+		} else if item.Priority == "high" {
 			priority = red(item.Priority)
 		}
 		cells = append(cells, []*simpletable.Cell{
 			{Text: fmt.Sprintf("%d", idx)},
 			{Text: task},
 			{Text: priority},
-			{Text: done},
+			{Text: status},
+			{Text: created},
 		})
 	}
 
@@ -176,4 +183,3 @@ func (p *ProjectList) ListTasks(projectIndex int) {
 	table.SetStyle(simpletable.StyleUnicode)
 	table.Println()
 }
-	
