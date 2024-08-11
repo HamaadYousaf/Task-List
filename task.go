@@ -1,8 +1,10 @@
 package tasklist
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -23,14 +25,25 @@ type projectItem struct {
 
 type ProjectList []projectItem
 
-func (p *ProjectList) AddProject(name string) {
+func CreateProject(db *sql.DB) {
 
-	newProject := projectItem{
-		Name:      name,
-		TaskItems: make([]taskItem, 0, 1),
+	query := `CREATE TABLE IF NOT EXISTS project (
+        ID             SERIAL    PRIMARY KEY,
+        NAME           TEXT      NOT NULL
+    )`
+
+	if _, err := db.Exec(query); err != nil {
+		log.Fatal(err)
 	}
+}
 
-	*p = append(*p, newProject)
+func AddProject(db *sql.DB, name string) {
+
+	query := `INSERT INTO project (name) VALUES ($1)`
+
+	if _, err := db.Exec(query, name); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (p *ProjectList) AddTask(task string, projectIndex int) error {
@@ -114,7 +127,17 @@ func (p *ProjectList) DeleteProject(projectIndex int) error {
 	return nil
 }
 
-func (p *ProjectList) ListProjects() {
+func ListProjects(db *sql.DB) {
+
+	query := `SELECT * FROM project`
+	rows, err := db.Query(query)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer rows.Close()
+
 	table := simpletable.New()
 
 	table.Header = &simpletable.Header{
@@ -126,13 +149,26 @@ func (p *ProjectList) ListProjects() {
 
 	var cells [][]*simpletable.Cell
 
-	for idx, project := range *p {
-		name := project.Name
+	for rows.Next() {
+		var name string
+		var id int
+
+		if err := rows.Scan(&id, &name); err != nil {
+			log.Fatal(err)
+		}
+
 		cells = append(cells, []*simpletable.Cell{
-			{Text: fmt.Sprintf("%d", idx)},
+			{Text: fmt.Sprintf("%d", id)},
 			{Text: name},
 		})
 	}
+	// for idx, project := range *p {
+	// 	name := project.Name
+	// 	cells = append(cells, []*simpletable.Cell{
+	// 		{Text: fmt.Sprintf("%d", idx)},
+	// 		{Text: name},
+	// 	})
+	// }
 
 	table.Body = &simpletable.Body{Cells: cells}
 

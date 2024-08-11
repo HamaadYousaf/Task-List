@@ -25,10 +25,11 @@ func main() {
 	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	// projectList := &tasklist.ProjectList{}
 
-	// projectList.AddProject("test")
-	// projectList.AddProject("test2")
+	// projectList := &tasklist.ProjectList{}
+	// tasklist.CreateProject(db)
+	// tasklist.AddProject(db, "test123")
+	// projectList.AddProject(db, "test4")
 	// projectList.AddProject("test3")
 	// projectList.AddTask("test task", 0)
 	// projectList.AddTask("test task2", 0)
@@ -39,7 +40,7 @@ func main() {
 	// // projectList.DeleteTask(0, 0)
 	// // projectList.DeleteTask(0, 0)
 	// // projectList.DeleteProject(2)
-	// projectList.ListProjects()
+	// tasklist.ListProjects(db)
 	// projectList.ListTasks(0)
 	// // projectList.ListTasks(1)
 	// // projectList.ListTasks(2)
