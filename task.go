@@ -25,11 +25,15 @@ type projectItem struct {
 
 type ProjectList []projectItem
 
-func CreateProject(db *sql.DB) {
+func CreateTask(db *sql.DB) {
 
-	query := `CREATE TABLE IF NOT EXISTS project (
+	query := `CREATE TABLE IF NOT EXISTS task (
         ID             SERIAL    PRIMARY KEY,
-        NAME           TEXT      NOT NULL
+        TASK           TEXT      NOT NULL,
+        PRIORITY       TEXT      NOT NULL,
+        STATUS         TEXT      NOT NULL,
+        CREATED        TEXT      NOT NULL,
+        project_id serial references project(id)
     )`
 
 	if _, err := db.Exec(query); err != nil {
@@ -37,30 +41,21 @@ func CreateProject(db *sql.DB) {
 	}
 }
 
-func AddProject(db *sql.DB, name string) {
+func AddTask(db *sql.DB, task string, projectId int) error {
 
-	query := `INSERT INTO project (name) VALUES ($1)`
+	query := `SELECT * FROM project WHERE id = $1`
+	_, err := db.Query(query, projectId)
 
-	if _, err := db.Exec(query, name); err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
-}
 
-func (p *ProjectList) AddTask(task string, projectIndex int) error {
+	created := time.Now().Format(time.RFC822)
+	taskQuery := `INSERT INTO task (task, priority, status, created, project_id) VALUES ($1, $2, $3, $4, $5)`
 
-	if projectIndex < 0 || projectIndex > len(*p)-1 {
-		return errors.New("invalid index")
+	if _, err := db.Exec(taskQuery, task, "low", "new", created, projectId); err != nil {
+		log.Fatal(err)
 	}
-
-	newTask := taskItem{
-		Task:     task,
-		Priority: "normal",
-		Status:   "new",
-		Created:  time.Now(),
-	}
-
-	project := &(*p)[projectIndex]
-	project.TaskItems = append(project.TaskItems, newTask)
 
 	return nil
 }
@@ -116,21 +111,9 @@ func (p *ProjectList) DeleteTask(projectIndex int, taskIndex int) error {
 	return nil
 }
 
-func (p *ProjectList) DeleteProject(projectIndex int) error {
-
-	if projectIndex < 0 || projectIndex > len(*p)-1 {
-		return errors.New("invalid project index")
-	}
-
-	*p = append((*p)[:projectIndex], (*p)[projectIndex+1:]...)
-
-	return nil
-}
-
-func ListProjects(db *sql.DB) {
-
-	query := `SELECT * FROM project`
-	rows, err := db.Query(query)
+func ListTasks(db *sql.DB, projectIndex int) {
+	query := `SELECT id, task, priority, status, created FROM task WHERE project_id=$1`
+	rows, err := db.Query(query, projectIndex)
 
 	if err != nil {
 		log.Fatal(err)
@@ -138,45 +121,6 @@ func ListProjects(db *sql.DB) {
 
 	defer rows.Close()
 
-	table := simpletable.New()
-
-	table.Header = &simpletable.Header{
-		Cells: []*simpletable.Cell{
-			{Align: simpletable.AlignCenter, Text: "#"},
-			{Align: simpletable.AlignCenter, Text: "Project"},
-		},
-	}
-
-	var cells [][]*simpletable.Cell
-
-	for rows.Next() {
-		var name string
-		var id int
-
-		if err := rows.Scan(&id, &name); err != nil {
-			log.Fatal(err)
-		}
-
-		cells = append(cells, []*simpletable.Cell{
-			{Text: fmt.Sprintf("%d", id)},
-			{Text: name},
-		})
-	}
-	// for idx, project := range *p {
-	// 	name := project.Name
-	// 	cells = append(cells, []*simpletable.Cell{
-	// 		{Text: fmt.Sprintf("%d", idx)},
-	// 		{Text: name},
-	// 	})
-	// }
-
-	table.Body = &simpletable.Body{Cells: cells}
-
-	table.SetStyle(simpletable.StyleUnicode)
-	table.Println()
-}
-
-func (p *ProjectList) ListTasks(projectIndex int) {
 	table := simpletable.New()
 
 	table.Header = &simpletable.Header{
@@ -191,22 +135,24 @@ func (p *ProjectList) ListTasks(projectIndex int) {
 
 	var cells [][]*simpletable.Cell
 
-	tasks := (*p)[projectIndex].TaskItems
-	for idx, item := range tasks {
-		task := item.Task
-		priority := item.Priority
-		status := item.Status
-		created := item.Created.Format(time.RFC822)
+	for rows.Next() {
+		var task, priority, status, created string
+		var id int
+
+		if err := rows.Scan(&id, &task, &priority, &status, &created); err != nil {
+			log.Fatal(err)
+		}
+
 		if status == "done" {
-			task = green(fmt.Sprintf("\u2705 %s", item.Task))
-			priority = green(item.Priority)
-			status = green(item.Status)
+			task = green(fmt.Sprintf("\u2705 %s", task))
+			priority = green(priority)
+			status = green(status)
 			created = green(created)
-		} else if item.Priority == "high" {
-			priority = red(item.Priority)
+		} else if priority == "high" {
+			priority = red(priority)
 		}
 		cells = append(cells, []*simpletable.Cell{
-			{Text: fmt.Sprintf("%d", idx)},
+			{Text: fmt.Sprintf("%d", id)},
 			{Text: task},
 			{Text: priority},
 			{Text: status},

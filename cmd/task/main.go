@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	tasklist "github.com/HamaadYousaf/Task-List"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -26,6 +27,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// tasklist.CreateTask(db)
+	// tasklist.AddTask(db, "testtask1", 2)
+	// tasklist.AddTask(db, "testtask2", 2)
+	// tasklist.AddTask(db, "testtask3", 2)
+	// tasklist.AddTask(db, "testtask123", 1)
+	// tasklist.AddTask(db, "testtask321", 1)
 	// projectList := &tasklist.ProjectList{}
 	// tasklist.CreateProject(db)
 	// tasklist.AddProject(db, "test123")
@@ -43,5 +50,5 @@ func main() {
 	// tasklist.ListProjects(db)
 	// projectList.ListTasks(0)
 	// // projectList.ListTasks(1)
-	// // projectList.ListTasks(2)
+	tasklist.ListTasks(db, 2)
 }
