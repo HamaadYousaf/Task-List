@@ -2,28 +2,12 @@ package tasklist
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/alexeyco/simpletable"
 )
-
-type taskItem struct {
-	Task     string
-	Priority string
-	Status   string
-	Created  time.Time
-}
-
-type projectItem struct {
-	Name      string
-	TaskItems []taskItem
-}
-
-type ProjectList []projectItem
 
 func CreateTask(db *sql.DB) {
 
@@ -34,6 +18,7 @@ func CreateTask(db *sql.DB) {
         STATUS         TEXT      NOT NULL,
         CREATED        TEXT      NOT NULL,
         project_id serial references project(id)
+        ON DELETE CASCADE
     )`
 
 	if _, err := db.Exec(query); err != nil {
@@ -60,53 +45,34 @@ func AddTask(db *sql.DB, task string, projectId int) error {
 	return nil
 }
 
-func (p *ProjectList) SetPriority(priority string, projectIndex int, taskIndex int) error {
+func SetPriority(db *sql.DB, priority string, taskId int) error {
+	updateQuery := `UPDATE task SET priority = $2 WHERE id = $1`
 
-	if projectIndex < 0 || projectIndex > len(*p)-1 {
-		return errors.New("invalid project index")
+	if _, err := db.Exec(updateQuery, taskId, priority); err != nil {
+		log.Fatal(err)
 	}
-
-	project := &(*p)[projectIndex]
-
-	if taskIndex < 0 || taskIndex > len(project.TaskItems)-1 {
-		return errors.New("invalid task index")
-	}
-
-	project.TaskItems[taskIndex].Priority = strings.ToLower(priority)
 
 	return nil
 }
 
-func (p *ProjectList) SetStatus(status string, projectIndex int, taskIndex int) error {
+func SetStatus(db *sql.DB, status string, taskId int) error {
 
-	if projectIndex < 0 || projectIndex > len(*p)-1 {
-		return errors.New("invalid project index")
+	updateQuery := `UPDATE task SET status = $2 WHERE id = $1`
+
+	if _, err := db.Exec(updateQuery, taskId, status); err != nil {
+		log.Fatal(err)
 	}
-
-	project := &(*p)[projectIndex]
-
-	if taskIndex < 0 || taskIndex > len(project.TaskItems)-1 {
-		return errors.New("invalid task index")
-	}
-
-	project.TaskItems[taskIndex].Status = strings.ToLower(status)
 
 	return nil
 }
 
-func (p *ProjectList) DeleteTask(projectIndex int, taskIndex int) error {
+func DeleteTask(db *sql.DB, taskId int) error {
 
-	if projectIndex < 0 || projectIndex > len(*p)-1 {
-		return errors.New("invalid project index")
+	query := `DELETE FROM task WHERE id = $1`
+
+	if _, err := db.Exec(query, taskId); err != nil {
+		log.Fatal(err)
 	}
-
-	project := &(*p)[projectIndex]
-
-	if taskIndex < 0 || taskIndex > len(project.TaskItems)-1 {
-		return errors.New("invalid task index")
-	}
-
-	project.TaskItems = append(project.TaskItems[:taskIndex], project.TaskItems[taskIndex+1:]...)
 
 	return nil
 }

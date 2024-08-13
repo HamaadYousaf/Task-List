@@ -2,7 +2,6 @@ package tasklist
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 
@@ -30,13 +29,13 @@ func AddProject(db *sql.DB, name string) {
 	}
 }
 
-func (p *ProjectList) DeleteProject(projectIndex int) error {
+func DeleteProject(db *sql.DB, projectId int) error {
 
-	if projectIndex < 0 || projectIndex > len(*p)-1 {
-		return errors.New("invalid project index")
+	query := `DELETE FROM project WHERE id = $1`
+
+	if _, err := db.Exec(query, projectId); err != nil {
+		log.Fatal(err)
 	}
-
-	*p = append((*p)[:projectIndex], (*p)[projectIndex+1:]...)
 
 	return nil
 }
